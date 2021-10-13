@@ -132,7 +132,7 @@ void app_main() {
 
     gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
     //co2_perform_selftest(SCD41_ADDR, NULL);
-    uint16_t scd41Measurement[3];
+    uint16_t scd41Measurement[3] = { 0,0,0 };
     co2_read(SCD41_ADDR, scd41Measurement);
     //Store each measurement in it's array:
     scd41ppm[scd41Count] = scd41Measurement[0];
@@ -143,8 +143,6 @@ void app_main() {
     gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
 
     vTaskDelay(5000 / portTICK_PERIOD_MS);
-    esp_sleep_enable_timer_wakeup(INTERVAL_US);
-    esp_deep_sleep_start();
     //read the temperature sensor:
     uint16_t temp = read_si7051();
     //Store the temperature in the buffer and increase the index:
@@ -190,12 +188,12 @@ void app_main() {
         ESP_LOGD("ESP-Now", "Transmission ended, going back to sleep");
     }
     //After transmission, check RoomTempCount value. If transmission failed and amount of measurements >= MAX_SAMPLES (theoretically this could just be RoomTempCount == MAX_SAMPLES, but just to be safe...)
-    if (scd41Count >= MAX_TEMP_SAMPLES) {
+    if (scd41Count >= MAX_CO2_SAMPLES) {
         //Move the samples so that there are "RETRY_INTERVAL" amount of available memory for samples. Overwriting the oldest "RETRY_INTERVAL" amount of measurements
-        memmove(scd41ppm, &scd41ppm[scd41Count - MAX_TEMP_SAMPLES + RETRY_INTERVAL], (MAX_TEMP_SAMPLES - RETRY_INTERVAL) * sizeof(scd41ppm[0]));
-        memmove(scd41temp, &scd41temp[scd41Count - MAX_TEMP_SAMPLES + RETRY_INTERVAL], (MAX_TEMP_SAMPLES - RETRY_INTERVAL) * sizeof(scd41temp[0]));
-        memmove(scd41hum, &scd41hum[scd41Count - MAX_TEMP_SAMPLES + RETRY_INTERVAL], (MAX_TEMP_SAMPLES - RETRY_INTERVAL) * sizeof(scd41hum[0]));
-        RoomTempCount = MAX_TEMP_SAMPLES - RETRY_INTERVAL; //Set RoomTempCount to the adjusted amount
+        memmove(scd41ppm, &scd41ppm[scd41Count - MAX_CO2_SAMPLES + RETRY_INTERVAL], (MAX_CO2_SAMPLES - RETRY_INTERVAL) * sizeof(scd41ppm[0]));
+        memmove(scd41temp, &scd41temp[scd41Count - MAX_CO2_SAMPLES + RETRY_INTERVAL], (MAX_CO2_SAMPLES - RETRY_INTERVAL) * sizeof(scd41temp[0]));
+        memmove(scd41hum, &scd41hum[scd41Count - MAX_CO2_SAMPLES + RETRY_INTERVAL], (MAX_CO2_SAMPLES - RETRY_INTERVAL) * sizeof(scd41hum[0]));
+        scd41Count = MAX_CO2_SAMPLES - RETRY_INTERVAL; //Set RoomTempCount to the adjusted amount
     }
 
     esp_sleep_enable_timer_wakeup(INTERVAL_US);
