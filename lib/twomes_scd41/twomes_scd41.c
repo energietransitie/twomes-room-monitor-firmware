@@ -1,5 +1,23 @@
 #include "twomes_scd41.h"
 
+#define SCD41_CMD_SERIALNUM     0x36, 0x82 //0x3682
+#define SCD41_CMD_SET_ASC_EN    0x24, 0x16 //0x2416
+#define SCD41_CMD_GET_ASC_EN    0x23, 0x13 //0x2313
+#define SCD41_CMD_READMEASURE   0xec, 0x05 //0xec05
+#define SCD41_CMD_SINGLESHOT    0x21, 0x9d //0x219d
+#define SCD41_CMD_LOWPOWER_PERIODIC 0x21, 0xac //0x21b1
+#define SCD41_SELFTEST          0x36, 0x39 //0x3639
+
+#define SCD41_CMD_GET_TEMP_OFF  0x23, 0x18  //0x2318
+
+//CRC defines
+#define CRC8_POLYNOMIAL 0x31
+#define CRC8_INIT 0xFF
+
+void co2_init(uint8_t address) {
+  if (co2_disable_asc(address)) ESP_LOGD("CO2_INIT", "ASC enabled"); else ESP_LOGD("CO2_INIT", "ASC disabled");
+}
+
 /**
  * CRC8 code taken from Sensirion SCD41 Datasheet: https://nl.mouser.com/datasheet/2/682/Sensirion_CO2_Sensors_SCD4x_Datasheet-2321195.pdf
  * @brief calculate the CRC for an SCD41 I2C message
@@ -119,11 +137,11 @@ void co2_read(uint8_t address, uint16_t *buffer) {
     buffer[0] = (read_buffer[0] << 8) | read_buffer[1];    //CO2
   }
   else buffer[0] = 0;
-  if (crc1 == read_buffer[5]) {
+  if (crc2 == read_buffer[5]) {
     buffer[1] = (read_buffer[3] << 8) | read_buffer[4]; //Temp
   }
   else buffer[1] = 0;
-  if (crc1 == read_buffer[8]) {
+  if (crc3 == read_buffer[8]) {
     buffer[2] = (read_buffer[6] << 8) | read_buffer[7]; //Humidity
   }
   else buffer[2] = 0;
@@ -133,54 +151,9 @@ void co2_read(uint8_t address, uint16_t *buffer) {
   return;
 }
 
-void co2_read_periodic(uint8_t address, uint8_t *buffer) {
-  //Send singleshot command:
-  uint8_t periodic_cmd[2] = { SCD41_CMD_LOWPOWER_PERIODIC };
-  ESP_ERROR_CHECK(twomes_i2c_write(address, periodic_cmd, sizeof periodic_cmd, I2C_SEND_STOP));
-
-  ESP_LOGD("CO2", "performing measurement, entering light sleep!");
-  //SCD41 has a long time to get the measurement, go to lightsleep while waiting:
-  esp_sleep_enable_timer_wakeup(SCD41_SINGLE_SHOT_DELAY * 1000); //Set wakeup timer
-  esp_light_sleep_start();          //enter light sleep
-
-  //On wakeup, program re-enters here:
-  ESP_LOGD("CO2", "Woke up from light sleep!");
-
-  //Read the measurement:
-  uint8_t read_measurement_cmd[2] = { SCD41_CMD_READMEASURE };
-  ESP_ERROR_CHECK(twomes_i2c_write(address, read_measurement_cmd, sizeof read_measurement_cmd, I2C_SEND_NO_STOP));
-  vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS);
-  uint8_t read_buffer[9];   //Read 3 words (16 bits) and 3 CRCs (8 bits)
-  ESP_ERROR_CHECK(twomes_i2c_read(address, read_buffer, sizeof read_buffer));
-  uint8_t crc1, crc2, crc3;
-  crc1 = scd41_crc8(&read_buffer[0], 2);
-  crc2 = scd41_crc8(&read_buffer[3], 2);
-  crc3 = scd41_crc8(&read_buffer[6], 2);
-  ESP_LOGD("CO2", "Measurement complete: CO2: 0x%02X%02X with CRC 0x%02X, T: 0x%02X%02X with CRC 0x%02X, RH 0x%02X%02X with CRC 0x%2X", read_buffer[0], read_buffer[1], read_buffer[2], read_buffer[3], read_buffer[4], read_buffer[5], read_buffer[6], read_buffer[7], read_buffer[8]);
-  ESP_LOGD("CRC", "Calculated CRC1: 0x%02X, CRC2: 0x%02X, CRC3: 0x%02X", crc1, crc2, crc3);
-  return;
+float scd41_temp_raw_to_celsius(uint16_t raw) {
+  return (-45 + 175 * raw / 65536.0f);
 }
-
-void co2_perform_selftest(uint8_t address, uint8_t *buffer) {
-  //Send singleshot command:
-  uint8_t selftest_cmd[2] = { SCD41_SELFTEST };
-  ESP_ERROR_CHECK(twomes_i2c_write(address, selftest_cmd, sizeof selftest_cmd, I2C_SEND_NO_STOP));
-  ESP_LOGD("CO2", "Sent selftest command, sleeping for 15 seconds");
-  esp_sleep_enable_timer_wakeup(15000 * 1000); //Set wakeup timer
-  esp_light_sleep_start();          //enter light sleep
-  uint8_t read_buffer[3];
-  ESP_ERROR_CHECK(twomes_i2c_read(address, read_buffer, sizeof read_buffer));
-  ESP_LOGD("CO2", "Measurement complete: Selftest result: 0x%02X%02X with CRC 0x%02X", read_buffer[0], read_buffer[1], read_buffer[2]);
-  return;
-}
-
-void co2_init(uint8_t address) {
-  //SCD41 has a longer start-up time, have a short delay:
-  vTaskDelay(500 / portTICK_PERIOD_MS);
-  // ESP_LOGD("CO2", "Found CO2 sensor with serial number %lu", co2_get_serial(SCD41_ADDR));
-#if DEBUG_CO2
-  co2_get_serial(address);
-#endif
-
-  //if (co2_disable_asc(address)) ESP_LOGD("CO2_INIT", "ASC enabled"); else ESP_LOGD("CO2_INIT", "ASC disabled");
+float scd41_rh_raw_to_percent(uint16_t raw) {
+  return (100 * raw / 65536.0f);
 }

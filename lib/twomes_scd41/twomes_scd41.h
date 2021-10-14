@@ -14,10 +14,7 @@
 #include "driver/gpio.h"
 #include "twomes_i2c.h"
 
- /**
-  * TODO: Everything...
-  *
-  */
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #define SCD41_INIT_DELAY        1000 // milliseconds
 #define SCD41_WAIT_MILLISECOND  2 // milliseconds
@@ -25,19 +22,9 @@
 
 #define SCD41_ADDR              0x62
 
-#define SCD41_CMD_SERIALNUM     0x36, 0x82 //0x3682
-#define SCD41_CMD_SET_ASC_EN    0x24, 0x16 //0x2416
-#define SCD41_CMD_GET_ASC_EN    0x23, 0x13 //0x2313
-#define SCD41_CMD_READMEASURE   0xec, 0x05 //0xec05
-#define SCD41_CMD_SINGLESHOT    0x21, 0x9d //0x219d
-#define SCD41_CMD_LOWPOWER_PERIODIC 0x21, 0xac //0x21b1
-#define SCD41_SELFTEST          0x36, 0x39 //0x3639
 
-#define SCD41_CMD_GET_TEMP_OFF  0x23, 0x18  //0x2318
 
-  //CRC defines
-#define CRC8_POLYNOMIAL 0x31
-#define CRC8_INIT 0xFF
+void co2_init(uint8_t address);
 
 /**
  * CRC8 code taken from Sensirion SCD41 Datasheet: https://nl.mouser.com/datasheet/2/682/Sensirion_CO2_Sensors_SCD4x_Datasheet-2321195.pdf
@@ -68,13 +55,30 @@ uint64_t co2_get_serial(uint8_t address);
  */
 uint8_t co2_disable_asc(uint8_t address);
 
-
+/**
+ * send singleshot command, sleep for the conversion time and read the output \n SLEEPS FOR 5 SECONDS IN LIGHT SLEEP MODE
+ * 
+ * @param address i2c address
+ * @param buffer buffer to hold the read data in (uint16_t[3])
+ */
 void co2_read(uint8_t address, uint16_t *buffer);
 
-void co2_read_periodic(uint8_t address, uint8_t *buffer);
+/**
+ * @brief convert raw temp value to degrees Celsius
+ *
+ * @param raw the raw temperature value
+ *
+ * @return temperature in degrees Celsius
+ */
+float scd41_temp_raw_to_celsius(uint16_t);
 
-void co2_perform_selftest(uint8_t address, uint8_t *buffer);
-
-void co2_init(uint8_t address);
+/**
+ * @brief convert raw RH value to humidity percentage
+ *
+ * @param raw the raw RH value
+ *
+ * @return Humidity in percent
+ */
+float scd41_rh_raw_to_percent(uint16_t raw);
 
 #endif //_TWOMES_CO2SENSOR_H

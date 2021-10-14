@@ -13,6 +13,7 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 #include <esp_task_wdt.h>
+#include <sys/time.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -57,7 +58,7 @@ RTC_DATA_ATTR systemStates systemState = UNKNOWN;
 RTC_DATA_ATTR uint8_t RoomTempCount = 0;       //variable in RTC memory where number of current measurement is stored
 RTC_DATA_ATTR uint8_t scd41Count = 0;
 RTC_DATA_ATTR uint64_t previousTime = 0;            //REVIEW
-RTC_DATA_ATTR uint64_t time_correction = 200000;    //REVIEW, initial time correction
+RTC_DATA_ATTR uint64_t time_correction = 300000000;    //REVIEW, initial time correction
 RTC_DATA_ATTR uint16_t burstNumber = 0;             //Store the amount of databursts that have been done with ESP-Now, for syncing with gateway
 
 RTC_DATA_ATTR bool PowerUpBoot = false;
@@ -206,10 +207,11 @@ void app_main() {
     int32_t time_delta = time_us - previousTime;
     previousTime = time_us;
     time_correction += (time_delta - INTERVAL_US);
+    ESP_LOGD("TIME", "Correction: %llu Delta: %i, time_us: %llu", time_correction, time_delta, time_us);
     esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction);
 
 
-    ESP_LOGD("MAIN", "Going into deepsleep for %llu s", INTERVAL_US / 1000000);
+    ESP_LOGD("MAIN", "Going into deepsleep for %llu s, the time has been corrected by %llu", (TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction) / 1000000U, time_correction);
     esp_deep_sleep_start();
 }
 
