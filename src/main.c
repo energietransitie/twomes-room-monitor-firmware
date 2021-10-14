@@ -60,6 +60,8 @@ RTC_DATA_ATTR uint64_t previousTime = 0;            //REVIEW
 RTC_DATA_ATTR uint64_t time_correction = 200000;    //REVIEW, initial time correction
 RTC_DATA_ATTR uint16_t burstNumber = 0;             //Store the amount of databursts that have been done with ESP-Now, for syncing with gateway
 
+RTC_DATA_ATTR bool PowerUpBoot = false;
+
 //Twomes Measurement type enum:
 typedef enum ESPNOWdataTypes {
     BOILERTEMP,
@@ -100,9 +102,12 @@ void onDataSent(const uint8_t *, esp_now_send_status_t);
 
 void app_main() {
     twomes_init_gpio();
+
+
     //disable Supercap on PMOS, active low:
     gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
 
+    //If log level is set to 4(D) or 5(V):
     ESP_LOGD("DEBUG", "DEBUGGING MODE IS ENABLED\n");
 
     //Check if P2 is held down to enter pairing mode:
@@ -124,13 +129,10 @@ void app_main() {
     ESP_LOGD("DEBUG", "init twomes i2c with code: %s", esp_err_to_name(i2cErr));
 
     //give extra wakeup time to SCD41:
-    vTaskDelay(2000 / portTICK_PERIOD_MS);
     co2_init(SCD41_ADDR);
-    vTaskDelay(200 / portTICK_PERIOD_MS);
-    esp_sleep_enable_timer_wakeup(20000 * 1000); //Set wakeup timer
-    esp_light_sleep_start();          //enter light sleep
 
     gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
+    gpio_hold_en(PIN_SUPERCAP_ENABLE);
     //co2_perform_selftest(SCD41_ADDR, NULL);
     uint16_t scd41Measurement[3] = { 0,0,0 };
     co2_read(SCD41_ADDR, scd41Measurement);
@@ -139,10 +141,11 @@ void app_main() {
     scd41temp[scd41Count] = scd41Measurement[1];
     scd41hum[scd41Count] = scd41Measurement[2];
     scd41Count++;
+    ESP_LOGD("CO2", "Read SCD41: co2: %u, T: %3.2f, RH: %3.1f", scd41Measurement[0], scd41_temp_raw_to_celsius(scd41Measurement[1]), scd41_rh_raw_to_percent(scd41Measurement[2]));
 
+    gpio_hold_dis(PIN_SUPERCAP_ENABLE);
     gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
 
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
     //read the temperature sensor:
     uint16_t temp = read_si7051();
     //Store the temperature in the buffer and increase the index:
@@ -150,7 +153,7 @@ void app_main() {
     RoomTempCount++;
 
     //print the temperature to monitor for debugging:
-    ESP_LOGI("TEMPERATURE", "Read temperature %2.4f", (((175.72f) * temp) / 65536) - 46.85f);
+    ESP_LOGD("TEMPERATURE", "Read temperature %3.4f", si7051_raw_to_celsius(temp));
     ESP_LOGD(" DATA", " Gathered %u measurements so far", RoomTempCount);
 
 
@@ -196,7 +199,17 @@ void app_main() {
         scd41Count = MAX_CO2_SAMPLES - RETRY_INTERVAL; //Set RoomTempCount to the adjusted amount
     }
 
-    esp_sleep_enable_timer_wakeup(INTERVAL_US);
+    //Calibrate time:
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    int64_t time_us = (int64_t)tv.tv_sec * 1000000L + (int64_t)tv.tv_usec;
+    int32_t time_delta = time_us - previousTime;
+    previousTime = time_us;
+    time_correction += (time_delta - INTERVAL_US);
+    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction);
+
+
+    ESP_LOGD("MAIN", "Going into deepsleep for %llu s", INTERVAL_US / 1000000);
     esp_deep_sleep_start();
 }
 
