@@ -328,8 +328,8 @@ esp_err_t send_esp_now_co2(void) {
     };
     //Copy the read temperatures into the struct memory:
     memcpy(CO2_ESPNow.co2ppm, scd41ppm, scd41Count * sizeof(scd41ppm[0]));
-    memcpy(CO2_ESPNow.co2temp, scd41temp, scd41Count * sizeof(scd41ppm[0]));
-    memcpy(CO2_ESPNow.co2humid, scd41hum, scd41Count * sizeof(scd41ppm[0]));
+    memcpy(CO2_ESPNow.co2temp, scd41temp, scd41Count * sizeof(scd41temp[0]));
+    memcpy(CO2_ESPNow.co2humid, scd41hum, scd41Count * sizeof(scd41hum[0]));
 
     esp_err_t result = esp_now_send(peer_address, (uint8_t *)&CO2_ESPNow, sizeof(CO2_ESPNow));
 
