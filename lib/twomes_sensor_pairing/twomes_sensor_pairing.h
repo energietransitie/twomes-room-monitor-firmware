@@ -16,6 +16,7 @@
 #include <sensor_IO.h>
 
 #define ESPNOW_PAIRING_CHANNEL 1
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 
  /**

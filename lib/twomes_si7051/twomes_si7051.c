@@ -39,7 +39,7 @@ uint16_t read_si7051() {
 } //uint16_t read_si7051
 
 double si7051_raw_to_celsius(uint16_t raw) {
-  return (((175.7200) * raw) / 65536.0f) - 46.85f;
+  return (((175.7200) * raw) / 65535) - 46.85f;
 }
 
 /**
