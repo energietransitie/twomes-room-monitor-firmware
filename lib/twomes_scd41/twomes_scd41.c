@@ -58,14 +58,14 @@ uint8_t scd41_crc8(const uint8_t *data, uint16_t count) {
 uint64_t co2_get_serial(uint8_t address) {
   uint8_t cmd[2] = { SCD41_CMD_SERIALNUM };
   //Write the get-serial command, do not stop the i2c communication:
-  ESP_ERROR_CHECK(twomes_i2c_write(address, &cmd[0], sizeof(cmd), I2C_SEND_NO_STOP));
+  esp_err_t err = (twomes_i2c_write(address, &cmd[0], sizeof(cmd), I2C_SEND_NO_STOP));
 
   //Wait for 1ms, SCD41 processing time
   vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS);
 
   //Issue a read command:
   uint8_t serialNumber[9];  //3 16 bit numbers and 3 8-bit CRCs
-  ESP_ERROR_CHECK(twomes_i2c_read(address, &serialNumber[0], sizeof(serialNumber)));
+  err = (twomes_i2c_read(address, &serialNumber[0], sizeof(serialNumber)));
 
   //For debug: log the serial numbers, the received checksums and the calculated checksums:
   uint8_t crc1, crc2, crc3; //SCD41 sends a crc after every word (16 bits)
@@ -88,16 +88,16 @@ uint8_t co2_disable_asc(uint8_t address) {
   uint8_t x[2] = { 0,0 };
   uint8_t disable_asc_cmd[5] = { SCD41_CMD_SET_ASC_EN, 0, 0, scd41_crc8(x , 2) }; //Command buffer with generated CRC, write 0x0000 to SET_ASC address
   //Write to I2C:
-  ESP_ERROR_CHECK(twomes_i2c_write(address, disable_asc_cmd, sizeof disable_asc_cmd, I2C_SEND_STOP));
+  esp_err_t err = (twomes_i2c_write(address, disable_asc_cmd, sizeof disable_asc_cmd, I2C_SEND_STOP));
 
   vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS); //Give SCD41 time for processing
   //Perform read to check if disabling succeeded:
   uint8_t check_asc_cmd[2] = { SCD41_CMD_GET_ASC_EN };
-  ESP_ERROR_CHECK(twomes_i2c_write(address, check_asc_cmd, sizeof check_asc_cmd, I2C_SEND_NO_STOP));
+  err = (twomes_i2c_write(address, check_asc_cmd, sizeof check_asc_cmd, I2C_SEND_NO_STOP));
   vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS); //Give SCD41 time for processing
   //Read the result:
   uint8_t response_buffer[2];
-  ESP_ERROR_CHECK(twomes_i2c_read(address, response_buffer, sizeof response_buffer));
+  err = (twomes_i2c_read(address, response_buffer, sizeof response_buffer));
 
   //Debug print:
   ESP_LOGD("ASC", "Received Response: %2X, %2X", response_buffer[0], response_buffer[1]);
@@ -109,7 +109,7 @@ uint8_t co2_disable_asc(uint8_t address) {
 void co2_read(uint8_t address, uint16_t *buffer) {
   //Send singleshot command:
   uint8_t singleshot_cmd[2] = { SCD41_CMD_SINGLESHOT };
-  ESP_ERROR_CHECK(twomes_i2c_write(address, singleshot_cmd, sizeof singleshot_cmd, I2C_SEND_STOP));
+  esp_err_t err = (twomes_i2c_write(address, singleshot_cmd, sizeof singleshot_cmd, I2C_SEND_STOP));
 
   ESP_LOGD("CO2", "performing measurement, entering light sleep!");
   //SCD41 has a long time to get the measurement, go to lightsleep while waiting:
@@ -121,10 +121,10 @@ void co2_read(uint8_t address, uint16_t *buffer) {
 
   //Read the measurement:
   uint8_t read_measurement_cmd[2] = { SCD41_CMD_READMEASURE };
-  ESP_ERROR_CHECK(twomes_i2c_write(address, read_measurement_cmd, sizeof read_measurement_cmd, I2C_SEND_NO_STOP));
+  err = (twomes_i2c_write(address, read_measurement_cmd, sizeof read_measurement_cmd, I2C_SEND_NO_STOP));
   vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS);
   uint8_t read_buffer[9];   //Read 3 words (16 bits) and 3 CRCs (8 bits)
-  ESP_ERROR_CHECK(twomes_i2c_read(address, read_buffer, sizeof read_buffer));
+  err = (twomes_i2c_read(address, read_buffer, sizeof read_buffer));
 
   //Perform CRC for each measurement:
   uint8_t crc1, crc2, crc3;

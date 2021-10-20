@@ -33,6 +33,13 @@
 uint16_t read_si7051();
 
 /**
+ * @brief read the temperature from the Si7051 sensor
+ * @param attempts amount of retries
+ * @return raw temperature value
+ */
+uint16_t read_si7051_with_retries(uint8_t attempts);
+
+/**
  * @brief convert a raw temperature measurement to a value in degrees Celsius
  *
  * @param raw raw temperature value
