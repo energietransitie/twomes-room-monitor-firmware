@@ -56,8 +56,9 @@ uint64_t co2_get_serial(uint8_t address);
 uint8_t co2_disable_asc(uint8_t address);
 
 /**
- * send singleshot command, sleep for the conversion time and read the output \n SLEEPS FOR 5 SECONDS IN LIGHT SLEEP MODE
- * 
+ * send singleshot command, sleep for the conversion time and read the output \n
+ * SLEEPS FOR 5 SECONDS IN LIGHT SLEEP MODE \n
+ *
  * @param address i2c address
  * @param buffer buffer to hold the read data in (uint16_t[3])
  */

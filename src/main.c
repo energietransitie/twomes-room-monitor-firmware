@@ -38,13 +38,17 @@
 
 #define MAX_TEMP_SAMPLES    120                         //Buffer size for data (data loss after it fills up and fails transmission)
 #define MAX_CO2_SAMPLES     40
-#define ESPNOW_SEND_MINIMUM 10                          //Minimum amount to start sending 
+#define ESPNOW_SEND_MINIMUM_SI7051 50                          //Minimum amount to start sending 
+#define ESPNOW_SEND_MINIMUM_SCD41 15                          //Minimum amount to start sending 
 #define RETRY_INTERVAL 5                                /* Amount of measurements before a new ESP-Now attempt after a Fail To Send */
 #define PAIRING_TIMEOUT_uS (20*uS_TO_S_FACTOR)          //timeout for pairing
 
-#define TIME_TO_SLEEP 300                                /* Time between measurements in seconds (300 seconds = 5 minutes)*/
+#define TIME_TO_SLEEP 30                                /* Time between measurements in seconds (300 seconds = 5 minutes)*/
 #define INTERVAL_US (TIME_TO_SLEEP * uS_TO_S_FACTOR)    /* desired interval between measurements in us */
 
+//Read attempts for sensors:
+#define SI7051_READ_ATTEMPTS 3U
+#define SCD41_READ_ATTEMPTS 3U
 
 typedef enum systemStates { //Different to boilersensor, no need for conversion sleep
     UNKNOWN,
@@ -58,7 +62,7 @@ RTC_DATA_ATTR systemStates systemState = UNKNOWN;
 RTC_DATA_ATTR uint8_t RoomTempCount = 0;       //variable in RTC memory where number of current measurement is stored
 RTC_DATA_ATTR uint8_t scd41Count = 0;
 RTC_DATA_ATTR uint64_t previousTime = 0;            //REVIEW
-RTC_DATA_ATTR uint64_t time_correction = 300000000;    //REVIEW, initial time correction
+RTC_DATA_ATTR uint64_t time_correction = INTERVAL_US;    //REVIEW, initial time correction
 RTC_DATA_ATTR uint16_t burstNumber = 0;             //Store the amount of databursts that have been done with ESP-Now, for syncing with gateway
 
 RTC_DATA_ATTR bool PowerUpBoot = false;
@@ -76,16 +80,16 @@ typedef struct Roomtemp_Message {
     uint8_t numberofMeasurements;                       //number of measurements in burst
     uint16_t index;                                     //Number identifying the message, only increments on receiving an ACK from Gateway. Could be uint8_t since overflows are ignored?
     uint16_t intervalTime;                              //Interval between measurements, for timestamping in gateway
-    int16_t roomTemps[MAX_TEMP_SAMPLES];                //measurements of the Si7051
+    uint16_t roomTemps[MAX_TEMP_SAMPLES];                //measurements of the Si7051
 } Roomtemp_Message;
 typedef struct CO2_Message {
     uint8_t measurementType;                            //Type of measurements
     uint8_t numberofMeasurements;                       //number of measurements in burst
     uint16_t index;                                     //Number identifying the message, only increments on receiving an ACK from Gateway. Could be uint8_t since overflows are ignored?
     uint16_t intervalTime;                              //Interval between measurements, for timestamping in gateway
-    int16_t co2ppm[MAX_CO2_SAMPLES];                    //measurements of the CO2 concentration
-    int16_t co2temp[MAX_CO2_SAMPLES];                   //measurements of the temperature by SCD41
-    int16_t co2humid[MAX_CO2_SAMPLES];                  //measurements of the humidity
+    uint16_t co2ppm[MAX_CO2_SAMPLES];                    //measurements of the CO2 concentration
+    uint16_t co2temp[MAX_CO2_SAMPLES];                   //measurements of the temperature by SCD41
+    uint16_t co2humid[MAX_CO2_SAMPLES];                  //measurements of the humidity
 } CO2_Message;
 
 RTC_DATA_ATTR uint16_t roomTemperatures[MAX_TEMP_SAMPLES];  //Si7051 temp
@@ -99,7 +103,8 @@ bool callbackFinished; //to keep the processor awake while waiting for the ESP-N
 esp_err_t send_esp_now_roomtemp(void);
 esp_err_t send_esp_now_co2(void);
 esp_err_t pair_sensor(void);
-void onDataSent(const uint8_t *, esp_now_send_status_t);
+void onRoomDataSent(const uint8_t *, esp_now_send_status_t);
+void onCO2DataSent(const uint8_t *, esp_now_send_status_t);
 
 void app_main() {
     twomes_init_gpio();
@@ -113,6 +118,7 @@ void app_main() {
 
     //Check if P2 is held down to enter pairing mode:
     if (!gpio_get_level(BUTTON_P2)) {
+        gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
         int err = pair_sensor();
 
         //Check for pairing success and indicate to the user, then reboot
@@ -125,7 +131,6 @@ void app_main() {
             esp_restart();
         }
     }
-
     esp_err_t i2cErr = twomes_i2c_init();
     ESP_LOGD("DEBUG", "init twomes i2c with code: %s", esp_err_to_name(i2cErr));
 
@@ -148,18 +153,18 @@ void app_main() {
     gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
 
     //read the temperature sensor:
-    uint16_t temp = read_si7051();
+    uint16_t temp = read_si7051_with_retries(SI7051_READ_ATTEMPTS);
     //Store the temperature in the buffer and increase the index:
     roomTemperatures[RoomTempCount] = temp;
     RoomTempCount++;
 
     //print the temperature to monitor for debugging:
     ESP_LOGD("TEMPERATURE", "Read temperature %3.4f", si7051_raw_to_celsius(temp));
-    ESP_LOGD(" DATA", " Gathered %u measurements so far", RoomTempCount);
+    ESP_LOGD(" DATA", " Gathered %u roomtemps and %u CO2 measurements so far", RoomTempCount, scd41Count);
 
 
     //If RoomTempCount is larger than the send minimum and the interval
-    if (RoomTempCount >= ESPNOW_SEND_MINIMUM && ((RoomTempCount % RETRY_INTERVAL) == 0)) {
+    if (RoomTempCount >= ESPNOW_SEND_MINIMUM_SI7051 && ((RoomTempCount % RETRY_INTERVAL) == 0)) {
 
         ESP_LOGI("ESP-Now", "esp-now transmission returned code %s", esp_err_to_name(send_esp_now_roomtemp()));
         callbackFinished = false;
@@ -182,7 +187,7 @@ void app_main() {
     }
 
     //If CO2 count is larger than the send minimum and the interval
-    if (scd41Count >= ESPNOW_SEND_MINIMUM && ((scd41Count % RETRY_INTERVAL) == 0)) {
+    if (scd41Count >= ESPNOW_SEND_MINIMUM_SCD41 && ((scd41Count % RETRY_INTERVAL) == 0)) {
 
         ESP_LOGI("ESP-Now", "esp-now transmission returned code %s", esp_err_to_name(send_esp_now_co2()));
         callbackFinished = false;
@@ -255,7 +260,7 @@ esp_err_t send_esp_now_roomtemp(void) {
     ESP_ERROR_CHECK(esp_now_add_peer(&peer));
 
     //register on send callback for ACK:
-    esp_now_register_send_cb(onDataSent);
+    esp_now_register_send_cb(onRoomDataSent);
 
     //For debug, validate the Address and channel:
 
@@ -267,7 +272,7 @@ esp_err_t send_esp_now_roomtemp(void) {
         .numberofMeasurements = RoomTempCount,
     };
     //Copy the read temperatures into the struct memory:
-    memcpy(roomTemp_ESPNow.roomTemps, roomTemperatures, MAX_TEMP_SAMPLES * sizeof(roomTemperatures[0]));
+    memcpy(roomTemp_ESPNow.roomTemps, roomTemperatures, RoomTempCount * sizeof(roomTemperatures[0]));
 
     esp_err_t result = esp_now_send(peer_address, (uint8_t *)&roomTemp_ESPNow, sizeof(roomTemp_ESPNow));
 
@@ -313,7 +318,7 @@ esp_err_t send_esp_now_co2(void) {
     ESP_ERROR_CHECK(esp_now_add_peer(&peer));
 
     //register on send callback for ACK:
-    esp_now_register_send_cb(onDataSent);
+    esp_now_register_send_cb(onCO2DataSent);
 
     //For debug, validate the Address and channel:
 
@@ -325,16 +330,16 @@ esp_err_t send_esp_now_co2(void) {
         .numberofMeasurements = scd41Count,
     };
     //Copy the read temperatures into the struct memory:
-    memcpy(CO2_ESPNow.co2ppm, scd41ppm, scd41Count);
-    memcpy(CO2_ESPNow.co2temp, scd41temp, scd41Count);
-    memcpy(CO2_ESPNow.co2humid, scd41hum, scd41Count);
+    memcpy(CO2_ESPNow.co2ppm, scd41ppm, scd41Count * sizeof(scd41ppm[0]));
+    memcpy(CO2_ESPNow.co2temp, scd41temp, scd41Count * sizeof(scd41ppm[0]));
+    memcpy(CO2_ESPNow.co2humid, scd41hum, scd41Count * sizeof(scd41ppm[0]));
 
     esp_err_t result = esp_now_send(peer_address, (uint8_t *)&CO2_ESPNow, sizeof(CO2_ESPNow));
 
     return result;
 }
 
-void onDataSent(const uint8_t *mac_address, esp_now_send_status_t status) {
+void onRoomDataSent(const uint8_t *mac_address, esp_now_send_status_t status) {
     //de-init ESP-Now
     esp_now_unregister_send_cb();
     esp_now_deinit();
@@ -347,6 +352,24 @@ void onDataSent(const uint8_t *mac_address, esp_now_send_status_t status) {
     //If transmission was successful, reset the RoomTempCount count:
     if (status == ESP_NOW_SEND_SUCCESS) {
         RoomTempCount = 0;
+    }
+
+    callbackFinished = true;
+}
+
+void onCO2DataSent(const uint8_t *mac_address, esp_now_send_status_t status) {
+    //de-init ESP-Now
+    esp_now_unregister_send_cb();
+    esp_now_deinit();
+    esp_wifi_set_mode(WIFI_MODE_NULL);
+    //Close supercap
+    gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
+
+    ESP_LOGD("ESP-Now", "Received status %s", status ? "fail" : "success");
+
+    //If transmission was successful, reset the RoomTempCount count:
+    if (status == ESP_NOW_SEND_SUCCESS) {
+        scd41Count = 0;
     }
 
     callbackFinished = true;

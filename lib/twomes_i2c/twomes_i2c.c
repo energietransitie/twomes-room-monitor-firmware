@@ -1,5 +1,7 @@
 #include "twomes_i2c.h"
 
+#define I2C_TIMEOUT 650
+
 esp_err_t twomes_i2c_init(void) {
     //Setup the I2C:
     i2c_config_t i2c_config = {
@@ -38,10 +40,10 @@ esp_err_t twomes_i2c_write(uint8_t address, uint8_t *buffer, uint8_t len, bool s
     //Setup i2c communication:
     i2c_cmd_handle_t i2c_cmd = i2c_cmd_link_create();
     esp_err_t err = i2c_master_start(i2c_cmd);
-    ESP_LOGI("I2C", "Master start returned %s", esp_err_to_name(err));
+    ESP_LOGD("I2C", "Master start returned %s", esp_err_to_name(err));
     //Write the address and command to the i2c output buffer:
     err = i2c_master_write_byte(i2c_cmd, (address << 1) | I2C_MASTER_WRITE, true);
-    ESP_LOGI("I2C", "Master write byte returned %s", esp_err_to_name(err));
+    ESP_LOGD("I2C", "Master write byte returned %s", esp_err_to_name(err));
     for (uint8_t i = 0; i < len; i++) {
         i2c_master_write_byte(i2c_cmd, buffer[i], 1);
     }
@@ -50,8 +52,8 @@ esp_err_t twomes_i2c_write(uint8_t address, uint8_t *buffer, uint8_t len, bool s
     if (sendStop) i2c_master_stop(i2c_cmd);
 
     //Begin the command and return the esp_err_t code:
-    err = i2c_master_cmd_begin(I2C_PORT, i2c_cmd, 1350);
-    ESP_LOGI("I2C", "Master cmd begin returned %s", esp_err_to_name(err));
+    err = i2c_master_cmd_begin(I2C_PORT, i2c_cmd, I2C_TIMEOUT);
+    ESP_LOGD("I2C", "Master cmd begin returned %s", esp_err_to_name(err));
     //Clear i2c resources:
     i2c_cmd_link_delete(i2c_cmd);
 
@@ -75,6 +77,5 @@ esp_err_t twomes_i2c_read(uint8_t address, uint8_t *buffer, uint8_t len) {
     }
     i2c_master_read_byte(i2c_cmd, &buffer[len - 1], I2C_MASTER_NACK);
     i2c_master_stop(i2c_cmd);
-    return i2c_master_cmd_begin(I2C_PORT, i2c_cmd, 1350);
-
+    return i2c_master_cmd_begin(I2C_PORT, i2c_cmd, I2C_TIMEOUT);
 }
