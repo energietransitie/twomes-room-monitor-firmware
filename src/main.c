@@ -43,7 +43,7 @@
 #define RETRY_INTERVAL 5                                /* Amount of measurements before a new ESP-Now attempt after a Fail To Send */
 #define PAIRING_TIMEOUT_uS (20*uS_TO_S_FACTOR)          //timeout for pairing
 
-#define TIME_TO_SLEEP 30                                /* Time between measurements in seconds (300 seconds = 5 minutes)*/
+#define TIME_TO_SLEEP 300                                /* Time between measurements in seconds (300 seconds = 5 minutes)*/
 #define INTERVAL_US (TIME_TO_SLEEP * uS_TO_S_FACTOR)    /* desired interval between measurements in us */
 
 //Read attempts for sensors:
