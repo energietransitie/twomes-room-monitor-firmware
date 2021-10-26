@@ -162,11 +162,14 @@ void app_main() {
     ESP_LOGD("TEMPERATURE", "Read temperature %3.4f", si7051_raw_to_celsius(temp));
     ESP_LOGD(" DATA", " Gathered %u roomtemps and %u CO2 measurements so far", RoomTempCount, scd41Count);
 
+    //Bool to make sure we only send one transmission per cycle (to avoid collission in gateway)
+    bool EspNowTransmissionPerformed = false;
 
     //If RoomTempCount is larger than the send minimum and the interval
     if (RoomTempCount >= ESPNOW_SEND_MINIMUM_SI7051 && ((RoomTempCount % RETRY_INTERVAL) == 0)) {
 
         ESP_LOGI("ESP-Now", "esp-now transmission returned code %s", esp_err_to_name(send_esp_now_roomtemp()));
+        EspNowTransmissionPerformed = true;
         callbackFinished = false;
         while (!callbackFinished) {
             vTaskDelay(50 / portTICK_PERIOD_MS);
@@ -187,7 +190,7 @@ void app_main() {
     }
 
     //If CO2 count is larger than the send minimum and the interval
-    if (scd41Count >= ESPNOW_SEND_MINIMUM_SCD41 && ((scd41Count % RETRY_INTERVAL) == 0)) {
+    if ((!EspNowTransmissionPerformed) && (scd41Count >= ESPNOW_SEND_MINIMUM_SCD41) && ((scd41Count % RETRY_INTERVAL) == 0)) {
 
         ESP_LOGI("ESP-Now", "esp-now transmission returned code %s", esp_err_to_name(send_esp_now_co2()));
         callbackFinished = false;
