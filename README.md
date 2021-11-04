@@ -12,7 +12,7 @@ Firmware for the Twomes Room Monitor Module.
 * [Credits](#credits)
 
 ## General info
-This firmware is designed to run on the ESP32 of the [Twomes Room Monitor hardware](https://github.com/energietransitie/twomes-room-monitor-hardware), which also contains two primary sensors:
+This firmware is designed to run on the ESP32 of the [Twomes Temperature Monitor hardware](https://github.com/energietransitie/twomes-temperature-monitor-hardware), connected with the [Twomes CO₂ Meter Shield hardware](https://github.com/energietransitie/twomes-co2-meter-hardware) which contains two primary sensors:
 * Sensirion [SCD41](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensor-scd4x/) CO₂ sensor
 * [Si7051](https://www.silabs.com/sensors/temperature/si705x/device.si7051) temperature sensor
 
@@ -69,8 +69,8 @@ Ready:
 * Pairing with [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware)
 * Measure temperature using the [Si7051](https://www.silabs.com/sensors/temperature/si705x/device.si7051) sensor
 * Measure CO₂ concentration, relative humidity and temperature using the [SCD41](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensor-scd4x/) sensor
-* Sleep between conversions for ultra-low power consumption
-* Send measurement data to [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware) using ESP-NOW
+* Deep sleep between data acquisition for ultra-low power consumption
+* Send measurement data to the paired [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware) using ESP-NOW
 
 To-do:
 * Implement more status- and error indicators using LEDs
