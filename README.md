@@ -1,4 +1,4 @@
-# Twomes software repository template
+# Twomes Room Monitor Module firmware
 A template repository for the Twomes project.
 
 ## Table of contents
