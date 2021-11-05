@@ -130,7 +130,6 @@ void app_main() {
             ESP_LOGD("PAIRING", "Pairing returned with error code %i", err);
             gpio_set_level(LED_ERROR, 1);
             vTaskDelay(5000 / portTICK_PERIOD_MS);
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
             esp_restart();
         }
     }
