@@ -23,6 +23,7 @@
 #include "driver/i2c.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
+#include "rom/rtc.h"
 
  //Run in Debug mode:
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -109,7 +110,6 @@ void onCO2DataSent(const uint8_t *, esp_now_send_status_t);
 void app_main() {
     twomes_init_gpio();
 
-
     //disable Supercap on PMOS, active low:
     gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
 
@@ -117,7 +117,8 @@ void app_main() {
     ESP_LOGD("DEBUG", "DEBUGGING MODE IS ENABLED\n");
 
     //Check if P2 is held down to enter pairing mode:
-    if (!gpio_get_level(BUTTON_P2)) {
+    if (rtc_get_reset_reason(PRO_CPU_NUM) == POWERON_RESET) {
+        vTaskDelay(10000 / portTICK_PERIOD_MS); //Time for supercap to charge
         gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
         int err = pair_sensor();
 
@@ -125,9 +126,9 @@ void app_main() {
         if (err != ESP_OK) {
             //Error LED on failure
             ESP_LOGD("PAIRING", "Pairing returned with error code %i", err);
-            uint8_t args[2] = { 3,LED_ERROR };
+            uint8_t args[2] = { 10,LED_ERROR };
             xTaskCreatePinnedToCore(blink, "pairing_fail", 768, (void *)args, 5, NULL, 1);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
             esp_restart();
         }
     }
@@ -407,9 +408,9 @@ int pair_sensor(void) {
     //a timeout will return the function:
     while ((startTime + PAIRING_TIMEOUT_uS > esp_timer_get_time())) {
         gpio_set_level(LED_STATUS, 1);
-        vTaskDelay(500);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
         gpio_set_level(LED_STATUS, 0);
-        vTaskDelay(500);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     return -1; //Exit with code -1 to indicate pairing fail
 }
