@@ -115,10 +115,12 @@ void app_main() {
 
     //If log level is set to 4(D) or 5(V):
     ESP_LOGD("DEBUG", "DEBUGGING MODE IS ENABLED\n");
+    if (rtc_get_reset_reason(PRO_CPU_NUM) == RTCWDT_BROWN_OUT_RESET) {
+        vTaskDelay(10000 / portTICK_PERIOD_MS); //Time for supercap to charge
+    }
 
     //Check if P2 is held down to enter pairing mode:
     if (rtc_get_reset_reason(PRO_CPU_NUM) == POWERON_RESET) {
-        vTaskDelay(10000 / portTICK_PERIOD_MS); //Time for supercap to charge
         gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
         int err = pair_sensor();
 
@@ -126,9 +128,9 @@ void app_main() {
         if (err != ESP_OK) {
             //Error LED on failure
             ESP_LOGD("PAIRING", "Pairing returned with error code %i", err);
-            uint8_t args[2] = { 10,LED_ERROR };
+            uint8_t args[2] = { 50 ,LED_ERROR };
             xTaskCreatePinnedToCore(blink, "pairing_fail", 768, (void *)args, 5, NULL, 1);
-            vTaskDelay(2000 / portTICK_PERIOD_MS);
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
             esp_restart();
         }
     }
@@ -398,7 +400,7 @@ int pair_sensor(void) {
     //Setup ESP-Now:
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_now_init());
-    //Set the channel to 0
+    //Set the channel to 1
     ESP_ERROR_CHECK(esp_wifi_start());
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(esp_wifi_set_channel(ESPNOW_PAIRING_CHANNEL, WIFI_SECOND_CHAN_NONE));
