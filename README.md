@@ -41,15 +41,15 @@ To deploy the firmware, in addition to the [generic prerequisites for deploying 
 ### Uploading firmware
 * Download the [binary release for your device](https://github.com/energietransitie/twomes-p1-room-monitor-firmware/releases) and extract it to a directory of your choice.
 * If you used the device before, you shoud first [erase all persistenly stored data](#erasing-all-persistenly-stored-data).
-* Open a comand prompt in that directory, change the directory to the binaries subfolder and enter (**N.B. this command differs from the deployment command of the generic firmware**):
+* Open a command prompt in that directory, change the directory to the binaries subfolder and enter (**N.B. this command differs from the deployment command of the generic firmware**):
 	```shell
-	py -m esptool --chip esp32 --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x9000 partitions.bin 0xe000 ota_data_initial.bin 0x10000 firmware.bin  
+	py -m esptool --chip esp32 --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x9000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin  
 	```
 * This should automatically detect the USB port that the device is connected to.
 * If not, then open the Device Manager (in Windows press the `Windows + X` key combination, then select Device Manager), go to View and click Show Hidden Devices. Then unfold `Ports (COM & LPT)`. You should find the device there, named `USB-Serial Port`. If there is no numbered COM port indicated, it's usually the next in sequence.  
 * If the COM port is not automatically detected, then enter (while replacing `?` with the digit found in the previous step) (**N.B. this command differs from the deployment command of the generic firmware**): 
 	```shell
-	py -m esptool --chip esp32 --port "COM?" --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x9000 partitions.bin 0xe000 ota_data_initial.bin 0x10000 firmware.bin```
+	py -m esptool --chip esp32 --port "COM?" --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x9000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin```
 * When you see the beginning of the sequence `conecting ......_____......`, press and hold the button labeled `GPIO0 (SW2)` on the PCB, then briefly press the button labeled `RESET (SW1)` shortly. 
 * You should see an indication that the firmware is being written to the device.
 * When the upload is finished, view the serial output with a serial monitor tool like PuTTY or the utility of your IDE (115200 baud). Press reset and make sure the firmware boots. 
