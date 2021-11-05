@@ -128,8 +128,8 @@ void app_main() {
         if (err != ESP_OK) {
             //Error LED on failure
             ESP_LOGD("PAIRING", "Pairing returned with error code %i", err);
-            uint8_t args[2] = { 50 ,LED_ERROR };
-            xTaskCreatePinnedToCore(blink, "pairing_fail", 768, (void *)args, 5, NULL, 1);
+            gpio_set_level(LED_ERROR, 1);
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
             vTaskDelay(5000 / portTICK_PERIOD_MS);
             esp_restart();
         }
