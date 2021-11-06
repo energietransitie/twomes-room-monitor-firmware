@@ -126,7 +126,7 @@ void app_main() {
         vTaskDelay(10000 / portTICK_PERIOD_MS); //Time for supercap to charge
     }
 
-    //Check if P2 is held down to enter pairing mode:
+    //Check if SW3 is held down to enter pairing mode:
     if (rtc_get_reset_reason(PRO_CPU_NUM) == POWERON_RESET) {
         gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
         int err = pair_sensor();
@@ -135,7 +135,7 @@ void app_main() {
         if (err != ESP_OK) {
             //Error LED on failure
             ESP_LOGD("PAIRING", "Pairing returned with error code %i", err);
-            gpio_set_level(LED_ERROR, 1);
+            gpio_set_level(RED_LED_ERROR_D1, 1);
             vTaskDelay(5000 / portTICK_PERIOD_MS);
             esp_restart();
         }
@@ -415,9 +415,9 @@ int pair_sensor(void) {
 
     //a timeout will return the function:
     while ((startTime + PAIRING_TIMEOUT_uS > esp_timer_get_time())) {
-        gpio_set_level(LED_STATUS, 1);
+        gpio_set_level(GREEN_LED_ERROR_D2, 1);
         vTaskDelay(500 / portTICK_PERIOD_MS);
-        gpio_set_level(LED_STATUS, 0);
+        gpio_set_level(GREEN_LED_ERROR_D2, 0);
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     return -1; //Exit with code -1 to indicate pairing fail

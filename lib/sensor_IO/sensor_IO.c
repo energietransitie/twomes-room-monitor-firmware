@@ -23,7 +23,7 @@ void twomes_init_gpio() {
  * @brief Blink LEDs
  * Pass two arguments in uint8_t array:
  * @param argument[0]  amount of blinks
- * @param argument[1]  pin to blink on (LED_STATUS or LED_ERROR)
+ * @param argument[1]  pin to blink on (GREEN_LED_ERROR_D2 or RED_LED_ERROR_D1)
  */
 void blink(void *args) {
     uint8_t *arguments = (uint8_t *)args;
