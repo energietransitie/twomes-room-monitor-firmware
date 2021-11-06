@@ -12,7 +12,9 @@
 #include <esp_log.h>
 #include <nvs.h>
 #include <nvs_flash.h>
+#include <esp_wifi.h>
 #include <esp_now.h>
+#include <esp_sleep.h>
 #include <sensor_IO.h>
 
 #define ESPNOW_PAIRING_CHANNEL 1

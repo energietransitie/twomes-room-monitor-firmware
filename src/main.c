@@ -23,6 +23,7 @@
 #include "driver/i2c.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
+#include "rom/rtc.h"
 
  //Run in Debug mode:
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
@@ -34,17 +35,24 @@
 #include "twomes_scd41.h"
 
 
-#define uS_TO_S_FACTOR 1000000ULL                       /* Conversion factor for micro seconds to seconds */
 
-#define MAX_TEMP_SAMPLES    120                         //Buffer size for data (data loss after it fills up and fails transmission)
+#ifdef CONFIG_TWOMES_STRESS_TEST
+#define ESPNOW_SEND_MINIMUM_SI7051 10                   //Minimum amount to start sending 
+#define ESPNOW_SEND_MINIMUM_SCD41 4                    //Minimum amount to start sending 
+#define TIME_TO_SLEEP 30                               //seconds; measurement interval (1 min * 60 s/mn)
+#define MAX_CO2_SAMPLES     10
+#else
+#define ESPNOW_SEND_MINIMUM_SI7051 50                  //Minimum amount to start sending 
+#define ESPNOW_SEND_MINIMUM_SCD41 15                   //Minimum amount to start sending 
+#define TIME_TO_SLEEP 300                              //seconds; measurement interval (5 min * 60 s/mn)
 #define MAX_CO2_SAMPLES     40
-#define ESPNOW_SEND_MINIMUM_SI7051 50                          //Minimum amount to start sending 
-#define ESPNOW_SEND_MINIMUM_SCD41 15                          //Minimum amount to start sending 
-#define RETRY_INTERVAL 5                                /* Amount of measurements before a new ESP-Now attempt after a Fail To Send */
-#define PAIRING_TIMEOUT_uS (20*uS_TO_S_FACTOR)          //timeout for pairing
+#endif
 
-#define TIME_TO_SLEEP 300                                /* Time between measurements in seconds (300 seconds = 5 minutes)*/
-#define INTERVAL_US (TIME_TO_SLEEP * uS_TO_S_FACTOR)    /* desired interval between measurements in us */
+#define uS_PER_S 1000000ULL                             //Conversion factor for microseconds to seconds
+#define INTERVAL_US (TIME_TO_SLEEP * uS_PER_S)          //microsoeoncs; desired interval between measurements in us
+#define MAX_TEMP_SAMPLES    120                         //Buffer size for data (data loss after it fills up and fails transmission)
+#define RETRY_INTERVAL 5                                //Amount of measurements before a new ESP-Now attempt after a Fail To Send */
+#define PAIRING_TIMEOUT_uS (20 * uS_PER_S)              //timeout for pairing
 
 //Read attempts for sensors:
 #define SI7051_READ_ATTEMPTS 3U
@@ -109,15 +117,17 @@ void onCO2DataSent(const uint8_t *, esp_now_send_status_t);
 void app_main() {
     twomes_init_gpio();
 
-
     //disable Supercap on PMOS, active low:
     gpio_set_level(PIN_SUPERCAP_ENABLE, 1);
 
     //If log level is set to 4(D) or 5(V):
     ESP_LOGD("DEBUG", "DEBUGGING MODE IS ENABLED\n");
+    if (rtc_get_reset_reason(PRO_CPU_NUM) == RTCWDT_BROWN_OUT_RESET) {
+        vTaskDelay(10000 / portTICK_PERIOD_MS); //Time for supercap to charge
+    }
 
-    //Check if P2 is held down to enter pairing mode:
-    if (!gpio_get_level(BUTTON_P2)) {
+    //Check if SW3 is held down to enter pairing mode:
+    if (rtc_get_reset_reason(PRO_CPU_NUM) == POWERON_RESET) {
         gpio_set_level(PIN_SUPERCAP_ENABLE, 0);
         int err = pair_sensor();
 
@@ -125,9 +135,8 @@ void app_main() {
         if (err != ESP_OK) {
             //Error LED on failure
             ESP_LOGD("PAIRING", "Pairing returned with error code %i", err);
-            uint8_t args[2] = { 3,LED_ERROR };
-            xTaskCreatePinnedToCore(blink, "pairing_fail", 768, (void *)args, 5, NULL, 1);
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            gpio_set_level(RED_LED_ERROR_D1, 1);
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
             esp_restart();
         }
     }
@@ -216,10 +225,10 @@ void app_main() {
     previousTime = time_us;
     time_correction += (time_delta - INTERVAL_US);
     ESP_LOGD("TIME", "Correction: %llu Delta: %i, time_us: %llu", time_correction, time_delta, time_us);
-    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction);
+    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_PER_S - time_correction);
 
 
-    ESP_LOGD("MAIN", "Going into deepsleep for %llu s, the time has been corrected by %llu", (TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction) / 1000000U, time_correction);
+    ESP_LOGD("MAIN", "Going into deepsleep for %llu s, the time has been corrected by %llu", (TIME_TO_SLEEP * uS_PER_S - time_correction) / 1000000U, time_correction);
     esp_deep_sleep_start();
 }
 
@@ -397,7 +406,7 @@ int pair_sensor(void) {
     //Setup ESP-Now:
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_now_init());
-    //Set the channel to 0
+    //Set the channel to 1
     ESP_ERROR_CHECK(esp_wifi_start());
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(esp_wifi_set_channel(ESPNOW_PAIRING_CHANNEL, WIFI_SECOND_CHAN_NONE));
@@ -406,10 +415,10 @@ int pair_sensor(void) {
 
     //a timeout will return the function:
     while ((startTime + PAIRING_TIMEOUT_uS > esp_timer_get_time())) {
-        gpio_set_level(LED_STATUS, 1);
-        vTaskDelay(500);
-        gpio_set_level(LED_STATUS, 0);
-        vTaskDelay(500);
+        gpio_set_level(GREEN_LED_STATUS_D2, 1);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        gpio_set_level(GREEN_LED_STATUS_D2, 0);
+        vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     return -1; //Exit with code -1 to indicate pairing fail
 }

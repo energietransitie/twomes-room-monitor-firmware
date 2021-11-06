@@ -16,11 +16,11 @@
 
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
-#define SCD41_INIT_DELAY        1000 // milliseconds
-#define SCD41_WAIT_MILLISECOND  2 // milliseconds
-#define SCD41_SINGLE_SHOT_DELAY 5000 // ms
+#define SCD41_INIT_DELAY_MS 1000        // milliseconds
+#define SCD41_WAIT_MS 2                 // milliseconds
+#define SCD41_SINGLE_SHOT_DELAY_MS 5000 // ms
 
-#define SCD41_ADDR              0x62
+#define SCD41_ADDR 0x62
 
 
 
