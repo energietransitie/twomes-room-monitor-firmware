@@ -35,17 +35,24 @@
 #include "twomes_scd41.h"
 
 
-#define uS_TO_S_FACTOR 1000000ULL                       /* Conversion factor for micro seconds to seconds */
 
-#define MAX_TEMP_SAMPLES    120                         //Buffer size for data (data loss after it fills up and fails transmission)
+#ifdef CONFIG_TWOMES_STRESS_TEST
+#define ESPNOW_SEND_MINIMUM_SI7051 10                   //Minimum amount to start sending 
+#define ESPNOW_SEND_MINIMUM_SCD41 4                    //Minimum amount to start sending 
+#define TIME_TO_SLEEP 30                               //seconds; measurement interval (1 min * 60 s/mn)
+#define MAX_CO2_SAMPLES     10
+#else
+#define ESPNOW_SEND_MINIMUM_SI7051 50                  //Minimum amount to start sending 
+#define ESPNOW_SEND_MINIMUM_SCD41 15                   //Minimum amount to start sending 
+#define TIME_TO_SLEEP 300                              //seconds; measurement interval (5 min * 60 s/mn)
 #define MAX_CO2_SAMPLES     40
-#define ESPNOW_SEND_MINIMUM_SI7051 50                          //Minimum amount to start sending 
-#define ESPNOW_SEND_MINIMUM_SCD41 15                          //Minimum amount to start sending 
-#define RETRY_INTERVAL 5                                /* Amount of measurements before a new ESP-Now attempt after a Fail To Send */
-#define PAIRING_TIMEOUT_uS (20*uS_TO_S_FACTOR)          //timeout for pairing
+#endif
 
-#define TIME_TO_SLEEP 300                                /* Time between measurements in seconds (300 seconds = 5 minutes)*/
-#define INTERVAL_US (TIME_TO_SLEEP * uS_TO_S_FACTOR)    /* desired interval between measurements in us */
+#define uS_PER_S 1000000ULL                             //Conversion factor for microseconds to seconds
+#define INTERVAL_US (TIME_TO_SLEEP * uS_PER_S)          //microsoeoncs; desired interval between measurements in us
+#define MAX_TEMP_SAMPLES    120                         //Buffer size for data (data loss after it fills up and fails transmission)
+#define RETRY_INTERVAL 5                                //Amount of measurements before a new ESP-Now attempt after a Fail To Send */
+#define PAIRING_TIMEOUT_uS (20 * uS_PER_S)              //timeout for pairing
 
 //Read attempts for sensors:
 #define SI7051_READ_ATTEMPTS 3U
@@ -218,10 +225,10 @@ void app_main() {
     previousTime = time_us;
     time_correction += (time_delta - INTERVAL_US);
     ESP_LOGD("TIME", "Correction: %llu Delta: %i, time_us: %llu", time_correction, time_delta, time_us);
-    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction);
+    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_PER_S - time_correction);
 
 
-    ESP_LOGD("MAIN", "Going into deepsleep for %llu s, the time has been corrected by %llu", (TIME_TO_SLEEP * uS_TO_S_FACTOR - time_correction) / 1000000U, time_correction);
+    ESP_LOGD("MAIN", "Going into deepsleep for %llu s, the time has been corrected by %llu", (TIME_TO_SLEEP * uS_PER_S - time_correction) / 1000000U, time_correction);
     esp_deep_sleep_start();
 }
 
