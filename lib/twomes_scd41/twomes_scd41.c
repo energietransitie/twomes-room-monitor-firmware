@@ -61,7 +61,7 @@ uint64_t co2_get_serial(uint8_t address) {
   esp_err_t err = (twomes_i2c_write(address, &cmd[0], sizeof(cmd), I2C_SEND_NO_STOP));
 
   //Wait for 1ms, SCD41 processing time
-  vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS);
+  vTaskDelay(SCD41_WAIT_MS / portTICK_PERIOD_MS);
 
   //Issue a read command:
   uint8_t serialNumber[9];  //3 16 bit numbers and 3 8-bit CRCs
@@ -90,11 +90,11 @@ uint8_t co2_disable_asc(uint8_t address) {
   //Write to I2C:
   esp_err_t err = (twomes_i2c_write(address, disable_asc_cmd, sizeof disable_asc_cmd, I2C_SEND_STOP));
 
-  vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS); //Give SCD41 time for processing
+  vTaskDelay(SCD41_WAIT_MS / portTICK_PERIOD_MS); //Give SCD41 time for processing
   //Perform read to check if disabling succeeded:
   uint8_t check_asc_cmd[2] = { SCD41_CMD_GET_ASC_EN };
   err = (twomes_i2c_write(address, check_asc_cmd, sizeof check_asc_cmd, I2C_SEND_NO_STOP));
-  vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS); //Give SCD41 time for processing
+  vTaskDelay(SCD41_WAIT_MS / portTICK_PERIOD_MS); //Give SCD41 time for processing
   //Read the result:
   uint8_t response_buffer[2];
   err = (twomes_i2c_read(address, response_buffer, sizeof response_buffer));
@@ -113,7 +113,7 @@ void co2_read(uint8_t address, uint16_t *buffer) {
 
   ESP_LOGD("CO2", "performing measurement, entering light sleep!");
   //SCD41 has a long time to get the measurement, go to lightsleep while waiting:
-  esp_sleep_enable_timer_wakeup(SCD41_SINGLE_SHOT_DELAY * 1000); //Set wakeup timer
+  esp_sleep_enable_timer_wakeup(SCD41_SINGLE_SHOT_DELAY_MS * 1000); //Set wakeup timer
   esp_light_sleep_start();          //enter light sleep
 
   //On wakeup, program re-enters here:
@@ -122,7 +122,7 @@ void co2_read(uint8_t address, uint16_t *buffer) {
   //Read the measurement:
   uint8_t read_measurement_cmd[2] = { SCD41_CMD_READMEASURE };
   err = (twomes_i2c_write(address, read_measurement_cmd, sizeof read_measurement_cmd, I2C_SEND_NO_STOP));
-  vTaskDelay(SCD41_WAIT_MILLISECOND / portTICK_PERIOD_MS);
+  vTaskDelay(SCD41_WAIT_MS / portTICK_PERIOD_MS);
   uint8_t read_buffer[9];   //Read 3 words (16 bits) and 3 CRCs (8 bits)
   err = (twomes_i2c_read(address, read_buffer, sizeof read_buffer));
 

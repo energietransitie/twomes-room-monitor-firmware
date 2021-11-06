@@ -415,9 +415,9 @@ int pair_sensor(void) {
 
     //a timeout will return the function:
     while ((startTime + PAIRING_TIMEOUT_uS > esp_timer_get_time())) {
-        gpio_set_level(GREEN_LED_ERROR_D2, 1);
+        gpio_set_level(GREEN_LED_STATUS_D2, 1);
         vTaskDelay(500 / portTICK_PERIOD_MS);
-        gpio_set_level(GREEN_LED_ERROR_D2, 0);
+        gpio_set_level(GREEN_LED_STATUS_D2, 0);
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     return -1; //Exit with code -1 to indicate pairing fail
