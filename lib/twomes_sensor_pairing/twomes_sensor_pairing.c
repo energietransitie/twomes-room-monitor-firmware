@@ -49,7 +49,11 @@ void onDataReceive(const uint8_t *macAddress, const uint8_t *payload, int length
         ESP_ERROR_CHECK(nvs_set_u8(gatewayHandle, "channel", *payload));
         ESP_LOGD("ESP-Now", "stored MAC address: %02X:%02X:%02X:%02X:%02X:%02X, and Channel %u", macAddress[0], macAddress[1], macAddress[2], macAddress[3], macAddress[4], macAddress[5], *payload);
         gpio_set_level(GREEN_LED_STATUS_D2, 1);
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        //light sleep while displaying LED
+        esp_sleep_enable_timer_wakeup(5* 1000 * 1000);
+        esp_light_sleep_start();
+        gpio_hold_dis(GREEN_LED_STATUS_D2);
+        gpio_set_level(GREEN_LED_STATUS_D2, 0);
         ESP_LOGD("Pairing", "Stored Pairing data");
         esp_restart(); //restart the device after pairing
     }
