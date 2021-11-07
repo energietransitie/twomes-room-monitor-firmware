@@ -43,7 +43,7 @@ To deploy the firmware, in addition to the [generic prerequisites for deploying 
 * Follow the [generic Twomes firmware upload instructions ](https://github.com/energietransitie/twomes-generic-esp-firmware#device-preparation-step-1a-uploading-firmware-to-esp32), with the exceptions mentioned below:
 	* When you see the beginning of the sequence `Connecting ......_____......`, press and hold the button labeled `GPIO0 (SW2)` on the PCB, then briefly press the button labeled `RESET (SW1)`. 
 	* You should see an indication that the firmware is being written to the device.
-	* When the upload is finished, view the serial output with a serial monitor tool like PuTTY or the utility of your IDE (115200 baud). Press reset and make sure the firmware boots. 
+	* When the upload is finished, view the serial output with a serial monitor tool like PuTTY or the utility of your IDE (115200 baud). Press `RESET (SW1)` shortly to  make sure the firmware boots. 
 	* Remove the battery or insert a battery insulating pull tab when you do not plan to use the room monitor module immediately, to prevent unnecessary battery drain.
 
 ## Developing 
