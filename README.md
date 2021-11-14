@@ -40,20 +40,11 @@ To deploy the firmware, in addition to the [generic prerequisites for deploying 
 
 ### Uploading firmware
 * Download the [binary release for your device](https://github.com/energietransitie/twomes-p1-room-monitor-firmware/releases) and extract it to a directory of your choice.
-* If you used the device before, you shoud first [erase all persistenly stored data](#erasing-all-persistenly-stored-data).
-* Open a command prompt in that directory, change the directory to the binaries subfolder and enter (**N.B. this command differs from the deployment command of the generic firmware**):
-	```shell
-	py -m esptool --chip esp32 --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x9000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin  
-	```
-* This should automatically detect the USB port that the device is connected to.
-* If not, then open the Device Manager (in Windows press the `Windows + X` key combination, then select Device Manager), go to View and click Show Hidden Devices. Then unfold `Ports (COM & LPT)`. You should find the device there, named `USB-Serial Port`. If there is no numbered COM port indicated, it's usually the next in sequence.  
-* If the COM port is not automatically detected, then enter (while replacing `?` with the digit found in the previous step) (**N.B. this command differs from the deployment command of the generic firmware**): 
-	```shell
-	py -m esptool --chip esp32 --port "COM?" --baud 460800 --before default_reset --after hard_reset write_flash -z --flash_mode dio --flash_freq 40m --flash_size detect 0x1000 bootloader.bin 0x9000 partitions.bin 0xe000 boot_app0.bin 0x10000 firmware.bin```
-* When you see the beginning of the sequence `conecting ......_____......`, press and hold the button labeled `GPIO0 (SW2)` on the PCB, then briefly press the button labeled `RESET (SW1)` shortly. 
-* You should see an indication that the firmware is being written to the device.
-* When the upload is finished, view the serial output with a serial monitor tool like PuTTY or the utility of your IDE (115200 baud). Press reset and make sure the firmware boots. 
-* Remove the battery or insert a battery insulating pull tab when you do not plan to use the room monitor module immediately, to prevent unnecessary battery drain.
+* Follow the [generic Twomes firmware upload instructions ](https://github.com/energietransitie/twomes-generic-esp-firmware#device-preparation-step-1a-uploading-firmware-to-esp32), with the exceptions mentioned below:
+	* When you see the beginning of the sequence `Connecting ......_____......`, press and hold the button labeled `GPIO0 (SW2)` on the PCB, then briefly press the button labeled `RESET (SW1)`. 
+	* You should see an indication that the firmware is being written to the device.
+	* When the upload is finished, view the serial output with a serial monitor tool like [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/) or the utility of your IDE (115200 baud). Press `RESET (SW1)` shortly to  make sure the firmware boots. 
+	* Remove the battery or insert a battery insulating pull tab when you do not plan to use the room monitor module immediately, to prevent unnecessary battery drain.
 
 ## Developing 
 This section describes how you can change the source code using a development environment and compile the source code into a binary release of the firmware that can be depoyed, either via the development environment, or via the method described in the section [Deploying](#deploying).
@@ -73,7 +64,7 @@ Ready:
 * Send measurement data to the paired [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware) using ESP-NOW
 
 To-do:
-* Implement more status- and error indicators using LEDs
+* Implement more error indicators using LEDs
 
 ## Status
 Project is: in Progress.
@@ -87,6 +78,7 @@ This software is a collaborative effort of:
 * Fredrik-Otto Lautenbag ·  [@Fredrik1997](https://github.com/Fredrik1997)
 * Gerwin Buma ·  [@GerwinBuma](https://github.com/GerwinBuma) 
 * Werner Heetebrij ·  [@Werner-Heetebrij](https://github.com/Werner-Heetebrij)
+* Henri ter Hofte · [@henriterhofte](https://github.com/henriterhofte) · Twitter [@HeNRGi](https://twitter.com/HeNRGi)
 
 Product owner:
 * Marco Winkelman · [@MarcoW71](https://github.com/MarcoW71)
