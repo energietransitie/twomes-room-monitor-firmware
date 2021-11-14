@@ -39,6 +39,8 @@ int getGatewayData(uint8_t *macAddress, size_t len, uint8_t *channel) {
 //ESP automatically reboots when done.
 void onDataReceive(const uint8_t *macAddress, const uint8_t *payload, int length) {
     //Read the MAC of the sender and store it in NVS:
+    //esp_wifi_stop();
+    //esp_wifi_deinit();
     esp_err_t err;
     nvs_handle gatewayHandle;
     ESP_LOGD("Pairing", "Received a pairing message!");
