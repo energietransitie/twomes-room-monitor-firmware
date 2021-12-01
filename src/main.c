@@ -25,8 +25,6 @@
 #include "esp_log.h"
 #include "rom/rtc.h"
 
- //Run in Debug mode:
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 
 #include "twomes_i2c.h"
 #include "sensor_IO.h"
@@ -34,6 +32,10 @@
 #include "twomes_si7051.h"
 #include "twomes_scd41.h"
 
+ //Run in Debug mode:
+// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+//Run in normal mode
+#define LOG_LOCAL_LEVEL ESP_LOG_INFO
 
 
 #ifdef CONFIG_TWOMES_STRESS_TEST
@@ -123,7 +125,8 @@ void app_main() {
     //If log level is set to 4(D) or 5(V):
     ESP_LOGD("DEBUG", "DEBUGGING MODE IS ENABLED\n");
     if (rtc_get_reset_reason(PRO_CPU_NUM) == RTCWDT_BROWN_OUT_RESET) {
-        vTaskDelay(10000 / portTICK_PERIOD_MS); //Time for supercap to charge
+        esp_sleep_enable_timer_wakeup(10000000);    //Sleep for 10 seconds to charge supercap
+        esp_light_sleep_start();
     }
 
     //Check if SW3 is held down to enter pairing mode:
@@ -142,7 +145,7 @@ void app_main() {
     }
     esp_err_t i2cErr = twomes_i2c_init();
     ESP_LOGD("DEBUG", "init twomes i2c with code: %s", esp_err_to_name(i2cErr));
-
+    ESP_LOGI("INFO", "Starting Measurement");
     //give extra wakeup time to SCD41:
     co2_init(SCD41_ADDR);
 
@@ -229,6 +232,7 @@ void app_main() {
 
 
     ESP_LOGD("MAIN", "Going into deepsleep for %llu s, the time has been corrected by %llu", (TIME_TO_SLEEP * uS_PER_S - time_correction) / 1000000U, time_correction);
+    ESP_LOGI("INFO", "Going to sleep");
     esp_deep_sleep_start();
 }
 

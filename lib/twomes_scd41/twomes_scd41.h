@@ -14,7 +14,7 @@
 #include "driver/gpio.h"
 #include "twomes_i2c.h"
 
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_WARN
 
 #define SCD41_INIT_DELAY_MS 1000        // milliseconds
 #define SCD41_WAIT_MS 2                 // milliseconds

@@ -9,7 +9,7 @@
 #define _TWOMES_ROOMSENSOR_H
 
  //Debug mode:
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#define LOG_LOCAL_LEVEL ESP_LOG_WARN
 
 #include "driver/i2c.h"
 #include "esp_log.h"
