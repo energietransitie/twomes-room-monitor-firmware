@@ -64,7 +64,7 @@ Ready:
 * Send measurement data to the paired [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware) using ESP-NOW
 
 To-do:
-* Implement more error indicators using LEDs
+* Align indication of status and error via LEDs with other measurement devices.
 
 ## Status
 Project is: in Progress.
