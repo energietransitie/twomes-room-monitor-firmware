@@ -19,12 +19,12 @@ This firmware is designed to run on the ESP32 of the [Twomes Temperature Monitor
 The ESP32 reads various properties of these sensors, and stores them in [RTC fast memory](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/memory-types.html#rtc-fast-memory), to preserve them during the deep sleep interval between brief moments when the ESP32 needs to be awake for data acquisition. After a series of 20 measurements at fixed time intervals, the ESP32 will send the series of measurements to the [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware) using the ESP-NOW protocol.
 
 Via the [Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware), the Twomes Room Monitor Module sends the following properties to the Twomes server:
-| Sensor | Property           | Unit | Data type  | Format | Interval [h:mm:ss]| Description                            |
-|--------|--------------------|------|------------|--------|-------------------|----------------------------------------|
-| SCD41  | `CO2concentration` | ppm  | float      | f.0    | 0:05:00           | CO₂ concentration                      |
-| SCD41  | `humidity`         | %RH  | float      | f.0    | 0:05:00           | relative humidity                      |
-| SCD41  | `roomTempCO2`      | °C   | float      | f.1    | 0:05:00           | air temperature                        |
-| Si7051 | `roomTemp`         | °C   | float      | f.1    | 0:05:00           | air temperature                        |
+| Sensor | Property           | Unit | [Printf format](https://en.wikipedia.org/wiki/Printf_format_string) | Measurement interval \[h:mm:ss\] | Description                            |
+|--------|--------------------|------|--------|-------------------|----------------------------------------|
+| SCD41  | `CO2concentration` | ppm  | %d     | 0:05:00           | CO₂ concentration                      |
+| SCD41  | `humidity`         | %RH  | %d     | 0:05:00           | relative humidity                      |
+| SCD41  | `roomTempCO2`      | °C   | %.1f   | 0:05:00           | air temperature                        |
+| Si7051 | `roomTemp`         | °C   | %.1f   | 0:05:00           | air temperature                        |
 
 ## Pairing
 After [deploying](#deploying) and installation in the home, the Twomes Room Monitor Module should be [paired as a satellite to the Twomes P1 Gateway measurement device](https://github.com/energietransitie/twomes-p1-gateway-firmware/blob/main/README.md#pairing-satellites).
@@ -83,5 +83,5 @@ This software is a collaborative effort of:
 Product owner:
 * Marco Winkelman · [@MarcoW71](https://github.com/MarcoW71)
 
-We use and gratefully aknowlegde the efforts of the makers of the following source code and libraries:
+We use and gratefully acknowlegde the efforts of the makers of the following source code and libraries:
 * [ESP-IDF](https://github.com/espressif/esp-idf), by Espressif Systems, licensed under [Apache 2.0 License](https://github.com/espressif/esp-idf/blob/master/LICENSE)
