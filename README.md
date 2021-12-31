@@ -80,6 +80,11 @@ This software is a collaborative effort of:
 * Werner Heetebrij ·  [@Werner-Heetebrij](https://github.com/Werner-Heetebrij)
 * Henri ter Hofte · [@henriterhofte](https://github.com/henriterhofte) · Twitter [@HeNRGi](https://twitter.com/HeNRGi)
 
+Thanks also go to:
+* Maarten Vermeulen · [@m44rtn](https://github.com/m44rtn)
+* Tristan Jongedijk · [@tristanjongedijk](https://github.com/tristanjongedijk)
+* Laurens de Boer · [@Laurenz02](https://github.com/Laurenz02)
+
 Product owner:
 * Marco Winkelman · [@MarcoW71](https://github.com/MarcoW71)
 
