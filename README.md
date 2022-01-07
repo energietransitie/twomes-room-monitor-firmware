@@ -12,7 +12,7 @@ Firmware for the Twomes Room Monitor Module.
 * [Credits](#credits)
 
 ## General info
-This firmware is designed to run on the ESP32 of the [Twomes Temperature Monitor hardware](https://github.com/energietransitie/twomes-temp-monitor-hardware), connected with the [Twomes CO₂ Meter Shield hardware](https://github.com/energietransitie/twomes-co2-meter-hardware) which contains two primary sensors:
+This firmware is designed to run on the ESP32 of the [Twomes Temperature Monitor hardware](https://github.com/energietransitie/twomes-temp-monitor-hardware), connected with the [Twomes CO₂ Monitor Shield hardware](https://github.com/energietransitie/twomes-co2-monitor-hardware) which contains two primary sensors:
 * Sensirion [SCD41](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensor-scd4x/) CO₂ sensor
 * [Si7051](https://www.silabs.com/sensors/temperature/si705x/device.si7051) temperature sensor
 
