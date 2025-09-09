@@ -9,6 +9,7 @@ Firmware for the Twomes Room Monitor Module.
 * [Features](#features)
 * [Status](#status)
 * [License](#license)
+* [Citation](#citation)
 * [Credits](#credits)
 
 ## General info
@@ -72,13 +73,21 @@ Project is: in Progress.
 ## License
 This software is available under the [Apache 2.0 license](./LICENSE.md), Copyright 2021 [Research group Energy Transition, Windesheim University of Applied Sciences](https://windesheim.nl/energietransitie) 
 
+## Citation
+
+If you use this repository in your research or work, please cite the following pre-print, which describes the overall NeedForHeat DataGear system of which this repository is a part:
+
+> Ter Hofte, H., & van Ravenzwaaij, N. (2025). *NeedForHeat DataGear: An Open Monitoring System to Accelerate the Residential Heating Transition*. arXiv preprint arXiv:2509.06927. https://doi.org/10.48550/arXiv.2509.06927
+
+**Note:** This is a pre-print submitted on 8 Sep 2025 and has not yet been peer-reviewed. For the full paper, see [https://arxiv.org/abs/2509.06927](https://arxiv.org/abs/2509.06927).
+
 ## Credits
 This software is a collaborative effort of:
 * Sjors Smit ·  [@Shorts1999](https://github.com/Shorts1999)
 * Fredrik-Otto Lautenbag ·  [@Fredrik1997](https://github.com/Fredrik1997)
 * Gerwin Buma ·  [@GerwinBuma](https://github.com/GerwinBuma) 
 * Werner Heetebrij ·  [@Werner-Heetebrij](https://github.com/Werner-Heetebrij)
-* Henri ter Hofte · [@henriterhofte](https://github.com/henriterhofte) · Twitter [@HeNRGi](https://twitter.com/HeNRGi)
+* Henri ter Hofte · [@henriterhofte](https://github.com/henriterhofte)
 
 Thanks also go to:
 * Maarten Vermeulen · [@m44rtn](https://github.com/m44rtn)
